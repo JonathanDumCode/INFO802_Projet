@@ -173,20 +173,31 @@
 
         }
     }
-    function printTime(tempsMax,tempsMin) {
+    function printTime(tempsMax, tempsMin) {
         let output = document.getElementById("result")
-        let txt = "<p>En roulant à 80 Km/h de moyen, votre temps de route vas varié entre :</p>"
-        if (tempsMax < 60) {
-            txt = txt + "<p>" + tempsMax + " min et ";
-        }else{
-            txt = txt + "<p>" + Math.floor(tempsMax/60) +"H "+Math.floor(tempsMax%60) +" min et ";
+        let txt = ""
+        if (tempsMax == tempsMin) {
+            txt = "<p>En roulant à 80 Km/h de moyen, votre temps est estimé à :</p>"
+            if (tempsMax < 60) {
+                txt = txt + "<p>" + tempsMax + " min et ";
+            } else {
+                txt = txt + "<p>" + Math.floor(tempsMax / 60) + "H " + Math.floor(tempsMax % 60) + " min </p> ";
+            }
+        } else {
+            txt = "<p>En roulant à 80 Km/h de moyen, votre temps de route vas varié entre :</p>"
+            if (tempsMin < 60) {
+                txt = txt + "<p>" + tempsMin + " min et ";
+            } else {
+                txt = txt + "<p>" + Math.floor(tempsMin / 60) + "H " + Math.floor(tempsMin % 60) + " min et ";
+            }
+
+            if (tempsMax < 60) {
+                txt = txt + "" + tempsMax + " min </p> ";
+            } else {
+                txt = txt + "" + Math.floor(tempsMax / 60) + "H " + Math.floor(tempsMax % 60) + " min </p> ";
+            }
         }
 
-        if (tempsMin < 60) {
-            txt = txt + "" + tempsMin + " min </p> ";
-        }else{
-            txt = txt + "" + Math.floor(tempsMin/60) +"H "+Math.floor(tempsMin%60) +" min </p> ";
-        }
         output.innerHTML = txt;
     }
     function getPath(C1, C2, id) {
@@ -207,7 +218,7 @@
             console.log(data);
             GEOJSON = JSON.parse(data.geoJSON);
             printStation(data.stations)
-            printTime(data.tempsMax,data.tempsMin)
+            printTime(data.tempsMax, data.tempsMin)
 
             if (pathLayer != null) {
                 map.removeLayer(pathLayer);
