@@ -1,8 +1,9 @@
 from spyne import *
 from spyne import Application, rpc, ServiceBase
-from spyne import Iterable
+from spyne import Integer, Unicode, Float
 from spyne.protocol.soap import Soap11
 from spyne.server.wsgi import WsgiApplication
+import json
 
 
 class HelloWorldService(ServiceBase):
@@ -10,16 +11,16 @@ class HelloWorldService(ServiceBase):
     def say_hello(ctx, name, times):
         for i in range(times):
             yield u'Hello, %s' % name
-    
-    @rpc(Integer, Integer, _returns=Integer)
-    def addition(ctx, a, b):
-        return a + b
 
-    @rpc(Integer, Integer,Iterable(Integer), _returns=Integer)
-    def dureeTrajet(ctx, nbRecharge, tempRecharge, tempTrajets):
-        tempTrajet = 0
-        for temp in tempTrajets:
-            tempTrajet += temp
+
+    @rpc(Integer, Integer,Unicode, _returns=Integer)
+    def dureeTrajet(ctx, nbRecharge, tempRecharge, distancels):
+        ls = json.loads(distancels)["ls"]
+        dist = 0
+        for i in ls:
+            dist += i
+
+        tempTrajet = int((dist/1000) / 80 *60)
         return nbRecharge*tempRecharge + tempTrajet
 
 application = Application([HelloWorldService], 'spyne.examples.hello.soap',

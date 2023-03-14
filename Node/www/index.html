@@ -3,27 +3,111 @@
 
 <head>
     <title>INFO802</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+        integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+        integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+
+
+
 </head>
+
 
 <body onload="setup()">
     <h1>INFO802</h1>
-    <p id="sayHello"></p>
-    <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d11156.478558377405!2d5.8802264!3d45.648419100000005!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sfr!2sfr!4v1677592930437!5m2!1sfr!2sfr" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <div>
+        <input type="text" id="from" placeholder="From" value="Paris">
+        <input type="text" id="to" placeholder="To" value="Milan">
+        <select id="vehicules">
+
+        </select>
+        <button onclick="getPath(getCoord(from.value),getCoord(to.value),Vehicule.value)">Get Path</button>
+    </div>
+    <br>
+    <div id="result"></div>
+
+    <br>
+    <div>
+
+    </div>
+    <div id="map" style="width: 100%; height: 800px;"></div>
+
 </body>
 
 </html>
+
 <script>
+
     const IP = "127.0.0.1:8080";
-    function setup() {
-        var sayHello = document.getElementById("sayHello");
-        // request(`http://${IP}/sayHello`, (data) => {
-        //     res = data.say_helloResult.string.join(" ");
-        //     sayHello.innerHTML = res;
-        // });
+    let Villes = null;
+
+    var from = document.getElementById("from");
+    var to = document.getElementById("to");
+    var Vehicule = document.getElementById("vehicules");
+    let Vehicules = [];
+    var pathLayer = null;
+    let STATIONS = [];
+
+    var map = L.map('map').setView([48.8534, 2.3488], 12);
+
+
+
+    document.addEventListener("keyup", function (event) {
+        if (event.code != "Backspace") {
+            let val = from.value
+            from.value = getFirstVille(from.value);
+            from.setSelectionRange(val.length, from.value.length);
+            val = to.value
+            to.value = getFirstVille(to.value);
+            to.setSelectionRange(val.length, to.value.length);
+        }
+
+    });
+    function soapRequest() {
+        function request(url, method, args, callback) {
+            const soap = require('soap')
+            soap.createClient(url, function (err, client) {
+                console.log(client);
+                client.MyService.MyPort[method](args, function (err, result) {
+                    //callback(result);
+                });
+            });
+        }
+        request("http://127.0.0.1:8000/xml/say_hello.wsdl", "say_hello", { name: "test", times: 1 }, (data) => {
+            console.log(data);
+        });
+
     }
 
+    function setup() {
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+        getVehicule();
+        getVilles();
+        //soapRequest();
+    }
 
-    function request(url,callback) {
+    function getFirstVille(txt) {
+        txt = txt.toLowerCase();
+        let ville = Villes.find(v => v.name.startsWith(txt));
+        if (ville == null) {
+            return getFirstVille("Paris");
+        }
+        return ville.name;
+    }
+    function getCoord(name) {
+        name = name.toLowerCase();
+        let ville = Villes.find(v => v.name == name);
+        if (ville == null) {
+            return getCoord("Paris");
+        }
+        return [ville.lng, ville.lat];
+    }
+
+    function request(url, callback) {
         const xhr = new XMLHttpRequest();
         xhr.open("GET", url);
         xhr.send();
@@ -37,4 +121,101 @@
             }
         };
     }
+    function getVilles() {
+        let url = `http://${IP}/getVilles`;
+        request(url, (data) => {
+            data = data.sort((a, b) => a.name.localeCompare(b.name));
+            for (let i = 0; i < data.length; i++) {
+                data[i].name = data[i].name.toLowerCase();
+            }
+            Villes = data;
+        });
+    }
+    function getVehicule() {
+        let url = `http://${IP}/getVehicule`;
+        request(url, (data) => {
+            data = data.vehicleList;
+            Vehicules = data;
+            let select = document.getElementById("vehicules");
+            for (let i = 0; i < data.length; i++) {
+                let option = document.createElement("option");
+                option.text = data[i].naming.make + " " + data[i].naming.model + " " + data[i].naming.chargetrip_version + " (" + data[i].range.chargetrip_range.worst + ")";
+                //option.innerHTML = "<div><div><img src='"+data[i].media.image.thumbnail_url+"' ></div><div>"+data[i].naming.make + " " + data[i].naming.model + " " + data[i].naming.chargetrip_version+"</div></div>";
+                option.value = data[i].id;
+                select.add(option);
+            }
+        });
+    }
+    function findVehicule(id) {
+        return Vehicules.find(v => v.id == id);
+    }
+    function printStation(stations) {
+        console.log("Station");
+        var stationIcone = L.icon({
+            iconUrl: `http://${IP}/stationIcone`,
+            iconSize: [32, 37],
+            iconAnchor: [16, 37],
+            popupAnchor: [0, -28]
+        });
+        for (let i = 0; i < STATIONS.length; i++) {
+            map.removeLayer(STATIONS[i]);
+        }
+
+        for (let i = 0; i < stations.length; i++) {
+            let station = stations[i][0];
+            if (station != undefined) {
+                let coord = station.location.coordinates;
+                let marker = L.marker([coord[1], coord[0]], { icon: stationIcone }).addTo(map);
+                //marker.bindPopup("<b>"+station.name+"</b><br>"+station.address+"<br>"+station.city+"<br>"+station.country);
+                STATIONS.push(marker);
+            }
+
+
+        }
+    }
+    function printTime(tempsMax,tempsMin) {
+        let output = document.getElementById("result")
+        let txt = "<p>En roulant à 80 Km/h de moyen, votre temps de route vas varié entre :</p>"
+        if (tempsMax < 60) {
+            txt = txt + "<p>" + tempsMax + " min et ";
+        }else{
+            txt = txt + "<p>" + Math.floor(tempsMax/60) +"H "+Math.floor(tempsMax%60) +" min et ";
+        }
+
+        if (tempsMin < 60) {
+            txt = txt + "" + tempsMin + " min </p> ";
+        }else{
+            txt = txt + "" + Math.floor(tempsMin/60) +"H "+Math.floor(tempsMin%60) +" min </p> ";
+        }
+        output.innerHTML = txt;
+    }
+    function getPath(C1, C2, id) {
+        let range = findVehicule(id).range.chargetrip_range.worst;
+        let worstTime = findVehicule(id).connectors[0].time;
+        let bestTime = findVehicule(id).connectors[0].time;
+        for (let i = 0; i < findVehicule(id).connectors.length; i++) {
+            if (findVehicule(id).connectors[i].time > worstTime) {
+                worstTime = findVehicule(id).connectors[i].time;
+            }
+            if (findVehicule(id).connectors[i].time < bestTime) {
+                bestTime = findVehicule(id).connectors[i].time;
+            }
+        }
+        let url = `http://${IP}/getPath?x1=${C1[0]}&y1=${C1[1]}&x2=${C2[0]}&y2=${C2[1]}&range=${range}&worstTime=${worstTime}&bestTime=${bestTime}`;
+        console.log(url)
+        request(url, (data) => {
+            console.log(data);
+            GEOJSON = JSON.parse(data.geoJSON);
+            printStation(data.stations)
+            printTime(data.tempsMax,data.tempsMin)
+
+            if (pathLayer != null) {
+                map.removeLayer(pathLayer);
+            }
+            pathLayer = (L.geoJSON(GEOJSON).addTo(map));
+            map.fitBounds(pathLayer.getBounds());
+        });
+    }
+
+    let GEOJSON = null
 </script>
