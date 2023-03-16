@@ -38,6 +38,9 @@ function addRoute(path, callback, appli = app) {
 addRoute('/', (req, res) => {
   res.sendFile('www/index.html', { root: __dirname })
 });
+addRoute('/font', (req, res) => {
+  res.sendFile('www/font/aabstractgroovy-webfont.woff', { root: __dirname })
+});
 
 // addRoute('/tinysoap-browser-min.js', (req, res) => {
 //   res.sendFile('www/tinysoap-browser-min.js', { root: __dirname })
@@ -121,6 +124,7 @@ function getStations(geoJSON, range, callback) {
 
 }
 addRoute('/getPath', (req, res) => {
+  console.log("getPath en Cours");
   var request = require('request');
   let x1 = req.query.x1;
   let y1 = req.query.y1;
