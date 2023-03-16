@@ -1,7 +1,7 @@
 const soap = require('soap')
 const http = require('http');
 
-const wsdlUrl = 'http://127.0.0.1:8000/xml/dureeTrajet.wsdl'
+const wsdlUrl = 'https://soap-three.vercel.app/xml/dureeTrajet.wsdl'
 
 
 // passing in overridePromiseSuffix because some of the endpoints end
