@@ -109,7 +109,7 @@
 
 <script>
 
-    const IP = "127.0.0.1:8080";
+    const IP = "127.0.0.1:3000";
     let Villes = null;
 
     var from = document.getElementById("from");
@@ -134,21 +134,7 @@
         }
 
     });
-    function soapRequest() {
-        function request(url, method, args, callback) {
-            const soap = require('soap')
-            soap.createClient(url, function (err, client) {
-                console.log(client);
-                client.MyService.MyPort[method](args, function (err, result) {
-                    //callback(result);
-                });
-            });
-        }
-        request("http://127.0.0.1:8000/xml/say_hello.wsdl", "say_hello", { name: "test", times: 1 }, (data) => {
-            console.log(data);
-        });
 
-    }
 
     function setup() {
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {

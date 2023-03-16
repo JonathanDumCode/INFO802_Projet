@@ -1,4 +1,4 @@
-const soap = require('soap')
+const soap = require('soap');
 const http = require('http');
 
 const wsdlUrl = 'https://soap-three.vercel.app/xml/dureeTrajet.wsdl'
