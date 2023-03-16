@@ -1,0 +1,15 @@
+
+{
+    "builds": [
+      {
+        "src": "ServiceSoapTempsTrajet.py",
+        "use": "@vercel/python"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "ServiceSoapTempsTrajet.py"
+      }
+    ]
+  }
